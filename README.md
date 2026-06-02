@@ -57,20 +57,23 @@ uv sync
 Take a photo of your plate from the front, straight on, with even lighting and minimal angle. This is the reference image the optimization works from. See `test_plate.jpg` for an example.
 
 ```bash
-# Optimize a frame pattern for your plate (takes a few minutes on GPU)
-scarecrow optimize plate.jpg
+# Generate a frame pattern for your plate (takes a few minutes on GPU)
+scarecrow generate plate.jpg
 
-# Reproducible optimization with a fixed seed
-scarecrow optimize plate.jpg --seed 42
+# Reproducible generation with a fixed seed
+scarecrow generate plate.jpg --seed 42
 
 # Preview the result
-scarecrow apply plate.jpg --pattern pattern.png
+scarecrow apply plate.jpg --pattern plate_pattern.png
 
 # Evaluate detection evasion
-scarecrow eval plate.jpg --pattern pattern.png
+scarecrow eval plate.jpg --pattern plate_pattern.png
 
-# Evaluate OCR corruption (requires rapidocr: uv sync --extra ocr)
-scarecrow eval plate.jpg --pattern pattern.png --ocr
+# Evaluate RapidOCR reads (requires rapidocr: uv sync --extra ocr)
+scarecrow eval plate.jpg --pattern plate_pattern.png --ocr
+
+# Emit structured eval results
+scarecrow eval plate.jpg --pattern plate_pattern.png --json
 ```
 
 ## Using your own detection model
