@@ -1,5 +1,3 @@
-"""Gradient-based adversarial frame pattern optimization."""
-
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
@@ -9,7 +7,7 @@ import torch
 import torch.nn.functional as F
 
 from scarecrow import model as yolo
-from scarecrow.mask import frame_mask
+from scarecrow.frame import frame_mask
 
 PATTERN_H, PATTERN_W = 32, 128
 MIN_PLATE_WIDTH = 30

@@ -1,5 +1,3 @@
-"""Detection model loading and inference."""
-
 import hashlib
 import warnings
 from pathlib import Path

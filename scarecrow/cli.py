@@ -1,58 +1,18 @@
 #!/usr/bin/env python3
-"""Adversarial license plate frame generator."""
 import argparse
 import json
 import sys
 from pathlib import Path
 
-import cv2
-import numpy as np
-
+from scarecrow import frame, ocr
 from scarecrow.io import image_paths, load, load_pattern, save, save_pattern
-from scarecrow.mask import frame_mask
 from scarecrow.model import DEFAULT_WEIGHTS_FILENAME
-
-OCR_PAD = 0.15
-_PLATE_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-"
 
 
 def _default_pattern_path(input_path: str) -> str:
     """Default generated pattern path for an input image."""
     p = Path(input_path)
     return str(p.with_name(f"{p.stem}_pattern.png"))
-
-
-def _apply_pattern(img, pattern, bboxes):
-    """Overlay grayscale pattern onto frame regions. Modifies img in-place."""
-    pr = cv2.resize(pattern, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
-    vals = (pr * 255).astype(np.uint8)
-    for bbox in bboxes:
-        mask = frame_mask(img.shape[:2], bbox)
-        for c in range(3):
-            img[:, :, c] = np.where(mask, vals, img[:, :, c])
-
-
-def _crop_for_ocr(img, bbox, pad=OCR_PAD):
-    """Crop plate region with padding."""
-    x, y, w, h = bbox
-    h_img, w_img = img.shape[:2]
-    cx1 = max(0, x - int(w * pad))
-    cy1 = max(0, y - int(h * pad))
-    cx2 = min(w_img, x + w + int(w * pad))
-    cy2 = min(h_img, y + h + int(h * pad))
-    return img[cy1:cy2, cx1:cx2]
-
-
-def _read_plate(reader, crop):
-    """Read plate text from a crop. Selects the largest text region."""
-    bgr = cv2.cvtColor(crop, cv2.COLOR_RGB2BGR)
-    result, _ = reader(bgr)
-    if not result:
-        return ""
-    # result: list of (bbox, text, conf); bbox is [[x1,y1],[x2,y1],[x2,y2],[x1,y2]]
-    best = max(result, key=lambda r: (r[0][2][1] - r[0][0][1]) * (r[0][1][0] - r[0][0][0]))
-    # Filter to plate characters only
-    return "".join(c for c in best[1].strip().upper() if c in _PLATE_CHARS)
 
 
 def _cmd_generate(args) -> int:
@@ -84,7 +44,7 @@ def _cmd_apply(args) -> int:
         print("No plate detected", file=sys.stderr)
         return 1
 
-    _apply_pattern(img, pattern, bboxes)
+    frame.apply_pattern(img, pattern, bboxes)
     out = args.output or str(Path(args.input).with_stem(Path(args.input).stem + "_framed"))
     save(img, out)
     print(f"Saved to {out}")
@@ -105,11 +65,10 @@ def _cmd_eval(args) -> int:
     ocr_reader = None
     if args.ocr:
         try:
-            from rapidocr_onnxruntime import RapidOCR
+            ocr_reader = ocr.load_reader()
         except ImportError:
             print("rapidocr-onnxruntime required for --ocr. Install: uv sync --extra ocr", file=sys.stderr)
             return 1
-        ocr_reader = RapidOCR()
 
     total, evaded, tiny_skipped = 0, 0, 0
     conf_clean_sum, conf_adv_sum = 0.0, 0.0
@@ -141,7 +100,7 @@ def _cmd_eval(args) -> int:
 
         total += 1
         adv = img.copy()
-        _apply_pattern(adv, pattern, bboxes)
+        frame.apply_pattern(adv, pattern, bboxes)
         adv_bboxes, adv_conf = yolo.predict(yolo_model, adv)
         adv_bboxes = [b for b in adv_bboxes if b[2] >= MIN_PLATE_WIDTH]
         was_evaded = len(adv_bboxes) == 0
@@ -157,10 +116,10 @@ def _cmd_eval(args) -> int:
         if ocr_reader is not None:
             ocr_parts = []
             for bbox in bboxes:
-                clean_crop = _crop_for_ocr(img, bbox)
-                adv_crop = _crop_for_ocr(adv, bbox)
-                clean_text = _read_plate(ocr_reader, clean_crop)
-                adv_text = _read_plate(ocr_reader, adv_crop)
+                clean_crop = ocr.crop_for_ocr(img, bbox)
+                adv_crop = ocr.crop_for_ocr(adv, bbox)
+                clean_text = ocr.read_plate(ocr_reader, clean_crop)
+                adv_text = ocr.read_plate(ocr_reader, adv_crop)
                 if len(clean_text) >= 2:
                     ocr_total += 1
                     changed = clean_text != adv_text
@@ -229,7 +188,7 @@ def _cmd_eval(args) -> int:
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description=__doc__)
+    p = argparse.ArgumentParser(description="Adversarial license plate frame generator.")
     sub = p.add_subparsers(dest="command", required=True)
 
     gen = sub.add_parser("generate", help="Generate adversarial frame pattern")

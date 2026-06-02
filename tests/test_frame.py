@@ -1,4 +1,4 @@
-from scarecrow.mask import OVERLAP, THICKNESS, frame_mask
+from scarecrow.frame import OVERLAP, THICKNESS, frame_mask
 
 
 class TestFrameMask:
