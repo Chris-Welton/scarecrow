@@ -2,8 +2,8 @@
 
 <img src="assets/scarecrow.png" width="160" alt="">
 
-![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)
-![GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](pyproject.toml)
+[![GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
 Adversarial frame pattern optimization for evading ALPR (automated license plate recognition). Given a photo of your plate, scarecrow generates a printable grayscale pattern that suppresses detection while keeping the plate readable to humans. [Keeps the flock away.](https://www.eff.org/deeplinks/2025/12/effs-investigations-expose-flock-safetys-surveillance-abuses-2025-review)
 
