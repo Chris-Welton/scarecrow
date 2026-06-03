@@ -181,7 +181,8 @@ def optimize(
             _, scores = yolo.detect(model, augmented)
             losses.append(scores.max(dim=-1).values.mean())
 
-        loss = torch.logsumexp(TAU * torch.stack(losses), dim=0).div(TAU)
+        stacked = torch.stack(losses)
+        loss = torch.logsumexp(TAU * stacked, dim=0) / TAU
         (grad,) = torch.autograd.grad(loss, pattern)
         pattern.grad = grad
 
@@ -189,6 +190,6 @@ def optimize(
         pattern.data.clamp_(0, 1)
 
         if on_step:
-            on_step(step, sum(v.item() for v in losses) / config.eot_samples)
+            on_step(step, stacked.mean().item())
 
     return pattern.detach().squeeze()
