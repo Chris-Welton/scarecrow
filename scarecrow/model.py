@@ -41,14 +41,9 @@ def load(weights: str, device: str | None = None) -> nn.Module:
 
 
 def detect(model: nn.Module, images: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-    """Differentiable forward pass returning raw boxes and scores.
+    """Differentiable forward pass. images: (B, 3, H, W) float32 [0, 1], RGB.
 
-    Args:
-        images: (B, 3, H, W) float32 in [0, 1], RGB.
-
-    Returns:
-        boxes: (B, N, 4) xywh
-        scores: (B, N) class confidence
+    Returns boxes (B, N, 4) xywh and max class score (B, N).
     """
     raw = model(images)[0]
     # (B, 4+nc, N) -> (B, N, 4+nc)

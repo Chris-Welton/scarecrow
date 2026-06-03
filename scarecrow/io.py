@@ -15,6 +15,7 @@ def image_paths(path: Path) -> list[Path]:
 
 
 def load(path: str | Path) -> np.ndarray:
+    """Load image as an RGB array."""
     p = Path(path)
     if not p.exists():
         raise FileNotFoundError(f"Not found: {p}")
@@ -25,6 +26,7 @@ def load(path: str | Path) -> np.ndarray:
 
 
 def save(img: np.ndarray, path: str | Path) -> None:
+    """Save an RGB image."""
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
     if not cv2.imwrite(str(p), cv2.cvtColor(img, cv2.COLOR_RGB2BGR)):
