@@ -103,10 +103,10 @@ def predict(
     xyxy[:, [1, 3]] = (xyxy[:, [1, 3]] - pad_y) / scale
 
     max_conf = float(scores.max())
-    bboxes = []
-    for i in range(len(scores)):
-        x1, y1, x2, y2 = xyxy[i].tolist()
-        bboxes.append((int(x1), int(y1), int(x2 - x1), int(y2 - y1)))
+    bboxes = [
+        (int(x1), int(y1), int(x2 - x1), int(y2 - y1))
+        for x1, y1, x2, y2 in xyxy.tolist()
+    ]
     return bboxes, max_conf
 
 
