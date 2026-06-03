@@ -53,11 +53,14 @@ def eot_transform(images: torch.Tensor, rng: torch.Generator) -> torch.Tensor:
     B, C, H, W = images.shape
     device = images.device
 
+    def draw(low, high, *shape):
+        return torch.empty(shape, device=device).uniform_(low, high, generator=rng)
+
     # Radial distortion + rotation + perspective, composed into one grid_sample
-    rot = 20 * (torch.rand(B, device=device, generator=rng) - 0.5)
-    tilt = 40 * (torch.rand(B, device=device, generator=rng) - 0.5)
-    pan = 50 * (torch.rand(B, device=device, generator=rng) - 0.5)
-    k1 = 0.3 * (torch.rand(1, device=device, generator=rng).item() - 0.5)
+    rot = draw(-10, 10, B)  # degrees
+    tilt = draw(-20, 20, B)
+    pan = draw(-25, 25, B)
+    k1 = draw(-0.15, 0.15).item()
 
     rad = torch.deg2rad(rot)
     cos_r, sin_r = torch.cos(rad), torch.sin(rad)
@@ -88,23 +91,23 @@ def eot_transform(images: torch.Tensor, rng: torch.Generator) -> torch.Tensor:
         images, grid, mode="bilinear", padding_mode="reflection", align_corners=True
     )
 
-    brightness = 1.0 + 0.2 * (torch.rand(B, 1, 1, 1, device=device, generator=rng) - 0.5)
+    brightness = draw(0.9, 1.1, B, 1, 1, 1)
     images = images * brightness
 
-    contrast = 0.8 + 0.4 * torch.rand(B, 1, 1, 1, device=device, generator=rng)
+    contrast = draw(0.8, 1.2, B, 1, 1, 1)
     images = (images - 0.5) * contrast + 0.5
 
-    sigma = 0.1 + 0.9 * torch.rand(1, device=device, generator=rng).item()
+    sigma = draw(0.1, 1.0).item()
     ax = torch.arange(3, device=device, dtype=torch.float32) - 1
     kernel = torch.exp(-0.5 * (ax / sigma) ** 2)
     kernel = kernel / kernel.sum()
     kernel_2d = (kernel[:, None] * kernel[None, :]).view(1, 1, 3, 3).expand(C, -1, -1, -1)
     images = F.conv2d(F.pad(images, [1, 1, 1, 1], mode="reflect"), kernel_2d, groups=C)
 
-    noise_std = 0.005 + 0.025 * torch.rand(1, device=device, generator=rng).item()
+    noise_std = draw(0.005, 0.03).item()
     images = images + torch.randn(B, C, H, W, device=device, generator=rng) * noise_std
 
-    scale = 0.5 + 0.7 * torch.rand(1, device=device, generator=rng).item()
+    scale = draw(0.5, 1.2).item()
     nh, nw = int(H * scale), int(W * scale)
     images = F.interpolate(
         F.interpolate(images, size=(nh, nw), mode="bilinear", align_corners=False),
