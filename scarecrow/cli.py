@@ -44,7 +44,7 @@ def _cmd_apply(args) -> int:
 
 
 def _cmd_eval(args) -> int:
-    yolo_model = yolo.load(args.weights)
+    model = yolo.load(args.weights)
     pattern = load_pattern(args.pattern)
     paths = image_paths(Path(args.input))
     if not paths:
@@ -59,14 +59,11 @@ def _cmd_eval(args) -> int:
             print("rapidocr-onnxruntime required for --ocr. Install: uv sync --extra ocr", file=sys.stderr)
             return 1
 
-    total, evaded = 0, 0
-    conf_clean_sum, conf_adversarial_sum = 0.0, 0.0
-    ocr_total, ocr_changed = 0, 0
     rows = []
 
     for p in paths:
         img = load(p)
-        bboxes, clean_conf = yolo.predict(yolo_model, img)
+        bboxes, clean_conf = yolo.predict(model, img)
         n_before = len(bboxes)
         bboxes = [b for b in bboxes if b[2] >= MIN_PLATE_WIDTH]
         if not bboxes:
@@ -85,18 +82,12 @@ def _cmd_eval(args) -> int:
                 print(f"{p.name}  [skipped: {reason}]")
             continue
 
-        total += 1
         adversarial = img.copy()
         frame.apply_pattern(adversarial, pattern, bboxes)
-        adversarial_bboxes, adversarial_conf = yolo.predict(yolo_model, adversarial)
+        adversarial_bboxes, adversarial_conf = yolo.predict(model, adversarial)
         adversarial_bboxes = [b for b in adversarial_bboxes if b[2] >= MIN_PLATE_WIDTH]
         was_evaded = len(adversarial_bboxes) == 0
         ocr_rows = []
-
-        if was_evaded:
-            evaded += 1
-        conf_clean_sum += clean_conf
-        conf_adversarial_sum += adversarial_conf
 
         if ocr_reader is not None:
             for bbox in bboxes:
@@ -105,10 +96,7 @@ def _cmd_eval(args) -> int:
                 clean_text = ocr.read_plate(ocr_reader, clean_crop)
                 adversarial_text = ocr.read_plate(ocr_reader, adversarial_crop)
                 if len(clean_text) >= 2:
-                    ocr_total += 1
                     changed = clean_text != adversarial_text
-                    if changed:
-                        ocr_changed += 1
                     ocr_rows.append({"clean": clean_text, "adversarial": adversarial_text, "changed": changed})
 
         rows.append(
@@ -133,12 +121,20 @@ def _cmd_eval(args) -> int:
                 status += "  OCR: " + ", ".join(parts)
             print(f"{p.name}  {status}")
 
+    scored = [r for r in rows if r["clean_boxes"]]
+    total = len(scored)
+    evaded = sum(r["evaded"] for r in scored)
+    ocr_total = sum(len(r["ocr"]) for r in rows)
+    ocr_changed = sum(o["changed"] for r in rows for o in r["ocr"])
+    mean_clean = sum(r["clean_conf"] for r in scored) / total if total else 0.0
+    mean_adversarial = sum(r["adversarial_conf"] for r in scored) / total if total else 0.0
+
     if args.json:
         summary = {
             "total": total,
             "evaded": evaded,
-            "mean_clean_conf": conf_clean_sum / total if total else 0.0,
-            "mean_adversarial_conf": conf_adversarial_sum / total if total else 0.0,
+            "mean_clean_conf": mean_clean,
+            "mean_adversarial_conf": mean_adversarial,
             "ocr_total": ocr_total,
             "ocr_changed": ocr_changed,
         }
@@ -161,7 +157,7 @@ def _cmd_eval(args) -> int:
     if total > 0:
         print(
             f"Evasion: {evaded}/{total} ({100 * evaded / total:.0f}%)"
-            f" | Mean conf: {conf_clean_sum / total:.3f} -> {conf_adversarial_sum / total:.3f}"
+            f" | Mean conf: {mean_clean:.3f} -> {mean_adversarial:.3f}"
         )
     if ocr_reader is not None and ocr_total > 0:
         print(f"OCR changed: {ocr_changed}/{ocr_total} ({100 * ocr_changed / ocr_total:.0f}%)")
