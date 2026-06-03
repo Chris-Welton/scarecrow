@@ -4,9 +4,9 @@ from pathlib import Path
 
 import numpy as np
 import torch
-import torch.export.passes
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.export.passes import move_to_device_pass
 
 DEFAULT_WEIGHTS_FILENAME = "license-plate-finetune-v1n.pt2"
 BUNDLED_WEIGHTS_SHA256 = "1404fd70f09f2c9fe20c292534b1821b7c8749421fae9cf9fd45a0279c4d9ce8"
@@ -34,10 +34,9 @@ def load(weights: str, device: str | None = None) -> nn.Module:
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", message=".*not writable.*")
         ep = torch.export.load(weights)
-    ep = torch.export.passes.move_to_device_pass(ep, device)
+    ep = move_to_device_pass(ep, device)
     model = ep.module()
-    for p in model.parameters():
-        p.requires_grad_(False)
+    model.requires_grad_(False)
     return model
 
 
@@ -47,6 +46,7 @@ def detect(model: nn.Module, images: torch.Tensor) -> tuple[torch.Tensor, torch.
     Returns boxes (B, N, 4) xywh and max class score (B, N).
     """
     raw = model(images)[0]
+    # 4 box coords + nc class scores per prediction:
     # (B, 4+nc, N) -> (B, N, 4+nc)
     preds = raw.permute(0, 2, 1)
     return preds[..., :4], preds[..., 4:].max(dim=-1).values
@@ -54,14 +54,14 @@ def detect(model: nn.Module, images: torch.Tensor) -> tuple[torch.Tensor, torch.
 
 def letterbox(images: torch.Tensor, imgsz: int) -> torch.Tensor:
     """Pad to square imgsz preserving aspect ratio."""
-    _, _, h, w = images.shape
+    b, _, h, w = images.shape
     if h == imgsz and w == imgsz:
         return images
     scale = imgsz / max(h, w)
     nh, nw = int(h * scale), int(w * scale)
     resized = F.interpolate(images, size=(nh, nw), mode="bilinear", align_corners=False)
     # 114 is YOLO's standard letterbox padding value
-    padded = torch.full((images.shape[0], 3, imgsz, imgsz), 114 / 255, device=images.device)
+    padded = torch.full((b, 3, imgsz, imgsz), 114 / 255, device=images.device)
     py, px = (imgsz - nh) // 2, (imgsz - nw) // 2
     padded[:, :, py : py + nh, px : px + nw] = resized
     return padded
@@ -89,13 +89,14 @@ def predict(
     if len(scores) == 0:
         return [], 0.0
 
-    # xywh -> xyxy
-    x, y, bw, bh = boxes.unbind(-1)
-    xyxy = torch.stack([x - bw / 2, y - bh / 2, x + bw / 2, y + bh / 2], dim=-1)
+    # (cx, cy, w, h) -> (x1, y1, x2, y2)
+    cx, cy, bw, bh = boxes.unbind(-1)
+    xyxy = torch.stack([cx - bw / 2, cy - bh / 2, cx + bw / 2, cy + bh / 2], dim=-1)
 
     keep = _nms(xyxy, scores, iou_thresh)
     xyxy, scores = xyxy[keep], scores[keep]
 
+    # undo letterboxing by mapping boxes back to original image coordinates
     scale = imgsz / max(h, w)
     pad_x = (imgsz - int(w * scale)) // 2
     pad_y = (imgsz - int(h * scale)) // 2
