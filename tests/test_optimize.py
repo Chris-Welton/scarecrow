@@ -11,32 +11,9 @@ from scarecrow.optimize import (
     Config,
     PlateData,
     _composite_letterbox,
-    composite,
     eot_transform,
     optimize,
 )
-
-
-class TestComposite:
-    def test_blending(self):
-        images = torch.full((1, 3, 8, 8), 0.5)
-        masks = torch.zeros(1, 1, 8, 8)
-        masks[:, :, 2:6, 2:6] = 1.0
-        pattern = torch.ones(1, 1, 8, 8)
-        result = composite(images, masks, pattern)
-        assert (result[0, :, 3, 3] == 1.0).all()
-        assert (result[0, :, 0, 0] == 0.5).all()
-
-    def test_gradient_masked_only(self):
-        """Gradients flow only through masked pixels."""
-        images = torch.rand(1, 3, 8, 8)
-        masks = torch.zeros(1, 1, 8, 8)
-        masks[:, :, 2:6, 2:6] = 1.0
-        pattern = torch.rand(1, 1, 8, 8, requires_grad=True)
-        composite(images, masks, pattern).sum().backward()
-        grad = pattern.grad[0, 0]
-        assert grad[0, 0] == 0.0
-        assert grad[3, 3] != 0.0
 
 
 class TestCompositeLetterbox:
@@ -48,6 +25,27 @@ class TestCompositeLetterbox:
         pattern = torch.full((1, 1, PATTERN_H, PATTERN_W), 0.5)
         result = _composite_letterbox(pattern, items, 640)
         assert result.shape == (1, 3, 640, 640)
+
+    def test_blending(self):
+        """Masked pixels take the pattern; unmasked keep the original."""
+        mask = torch.zeros(1, 64, 64)
+        mask[:, 16:48, 16:48] = 1.0
+        items = [PlateData(image=torch.full((3, 64, 64), 0.5), mask=mask)]
+        pattern = torch.ones(1, 1, 64, 64)
+        result = _composite_letterbox(pattern, items, 64)
+        assert (result[0, :, 32, 32] == 1.0).all()
+        assert (result[0, :, 0, 0] == 0.5).all()
+
+    def test_gradient_masked_only(self):
+        """Gradient reaches the pattern only through masked pixels."""
+        mask = torch.zeros(1, 64, 64)
+        mask[:, 16:48, 16:48] = 1.0
+        items = [PlateData(image=torch.rand(3, 64, 64), mask=mask)]
+        pattern = torch.rand(1, 1, 64, 64, requires_grad=True)
+        _composite_letterbox(pattern, items, 64).sum().backward()
+        grad = pattern.grad[0, 0]
+        assert grad[0, 0] == 0.0
+        assert grad[32, 32] != 0.0
 
     def test_differentiable(self):
         items = [PlateData(

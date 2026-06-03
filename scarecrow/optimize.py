@@ -29,11 +29,6 @@ class Config:
     seed: int | None = None
 
 
-def composite(images: torch.Tensor, masks: torch.Tensor, pattern: torch.Tensor) -> torch.Tensor:
-    """Blend the pattern into the images wherever the mask is active."""
-    return images * (1 - masks) + pattern.expand_as(images) * masks
-
-
 def _composite_letterbox(
     pattern: torch.Tensor, items: list[PlateData], imgsz: int
 ) -> torch.Tensor:
@@ -43,7 +38,9 @@ def _composite_letterbox(
     result = []
     for item in items:
         pat = F.interpolate(pattern, size=item.image.shape[1:], mode="nearest")
-        comp = composite(item.image.unsqueeze(0), item.mask.unsqueeze(0), pat)
+        img = item.image.unsqueeze(0)
+        mask = item.mask.unsqueeze(0)
+        comp = img * (1 - mask) + pat.expand_as(img) * mask
         result.append(yolo.letterbox(comp, imgsz).squeeze(0))
     return torch.stack(result)
 
