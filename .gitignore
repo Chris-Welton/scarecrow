@@ -2,5 +2,4 @@ __pycache__/
 .venv/
 *.egg-info/
 *.pt
-pattern.png
 dist/
