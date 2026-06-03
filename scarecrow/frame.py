@@ -1,8 +1,8 @@
 import cv2
 import numpy as np
 
-THICKNESS = 0.035
-OVERLAP = 0.12
+THICKNESS = 0.035  # outward border, ~0.42" / 12" plate width
+OVERLAP = 0.12  # inward overlap, ~0.72" / 6" plate height (past ~1.0" covers characters)
 
 
 def frame_mask(shape: tuple[int, int], bbox: tuple[int, int, int, int]) -> np.ndarray:
