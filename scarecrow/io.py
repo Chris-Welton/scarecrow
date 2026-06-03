@@ -28,18 +28,16 @@ def load(path: str | Path) -> np.ndarray:
 def save(img: np.ndarray, path: str | Path) -> None:
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
-    out = cv2.cvtColor(img, cv2.COLOR_RGB2BGR) if img.ndim == 3 and img.shape[2] == 3 else img
-    if not cv2.imwrite(str(p), out):
+    if not cv2.imwrite(str(p), cv2.cvtColor(img, cv2.COLOR_RGB2BGR)):
         raise OSError(f"Failed to write: {p}")
 
 
 def save_pattern(pattern: np.ndarray, path: str | Path) -> None:
-    """Save grayscale pattern (float [0,1] or uint8 [0,255]) as PNG."""
+    """Save grayscale pattern (float [0,1]) as PNG."""
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
-    if pattern.dtype in (np.float32, np.float64):
-        pattern = np.round(pattern * 255).clip(0, 255).astype(np.uint8)
-    if not cv2.imwrite(str(p), pattern):
+    arr = np.round(pattern * 255).clip(0, 255).astype(np.uint8)
+    if not cv2.imwrite(str(p), arr):
         raise OSError(f"Failed to write: {p}")
 
 
