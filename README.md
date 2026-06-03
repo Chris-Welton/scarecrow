@@ -2,6 +2,9 @@
 
 <img src="assets/scarecrow.png" width="160" alt="">
 
+![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)
+![GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue)
+
 Adversarial frame pattern optimization for evading ALPR (automated license plate recognition). Given a photo of your plate, scarecrow generates a printable grayscale pattern that suppresses detection while keeping the plate readable to humans. [Keeps the flock away.](https://www.eff.org/deeplinks/2025/12/effs-investigations-expose-flock-safetys-surveillance-abuses-2025-review)
 
 > [!WARNING]
@@ -17,14 +20,11 @@ Inspired by Ben Jordan's [PlateShapez](https://github.com/bennjordan/PlateShapez
 
 ## Results
 
-On the included test plate, scarecrow drops detection confidence from 0.84 to 0.00 (full evasion) in 1000 steps, and the plate remains human-readable.
+On the included test plate, scarecrow drops detection confidence from 0.84 to 0.00 (full evasion) in 1000 steps, and the plate remains human-readable. OCR is sometimes corrupted as a side effect, roughly 40% of the time depending on the random seed.
 
 | Before | After |
 |---|---|
 | ![before](assets/before.jpg) | ![after](assets/after.jpg) |
-
-> [!NOTE]
-> OCR is sometimes corrupted as a side effect, roughly 40% of the time depending on the random seed.
 
 ## How It Works
 
@@ -83,7 +83,7 @@ scarecrow eval plate.jpg --pattern plate_pattern.png --json
 > `torch.export.load` uses pickle, so loading an untrusted `.pt2` can execute arbitrary code. Only use `--weights` from sources you trust.
 
 <details>
-<summary>Convert ultralytics weights and point scarecrow at them</summary>
+<summary>Convert ultralytics weights</summary>
 
 Scarecrow works with any plate detection model, not just the included YOLO11n. The model needs to be in `torch.export` format (`.pt2`).
 
