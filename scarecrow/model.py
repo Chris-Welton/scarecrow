@@ -31,8 +31,9 @@ def load(weights: str, device: str | None = None) -> nn.Module:
         device = "cuda" if torch.cuda.is_available() else "cpu"
     if device == "cpu":
         warnings.warn("CUDA not available, running on CPU (slower)")
-    warnings.filterwarnings("ignore", message=".*not writable.*")
-    ep = torch.export.load(weights)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message=".*not writable.*")
+        ep = torch.export.load(weights)
     ep = torch.export.passes.move_to_device_pass(ep, device)
     model = ep.module()
     for p in model.parameters():
