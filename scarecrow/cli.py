@@ -91,10 +91,8 @@ def _cmd_eval(args) -> int:
 
         if ocr_reader is not None:
             for bbox in bboxes:
-                clean_crop = ocr.crop_for_ocr(img, bbox)
-                adversarial_crop = ocr.crop_for_ocr(adversarial, bbox)
-                clean_text = ocr.read_plate(ocr_reader, clean_crop)
-                adversarial_text = ocr.read_plate(ocr_reader, adversarial_crop)
+                clean_text = ocr.read_plate(ocr_reader, ocr.crop_for_ocr(img, bbox))
+                adversarial_text = ocr.read_plate(ocr_reader, ocr.crop_for_ocr(adversarial, bbox))
                 if len(clean_text) >= 2:
                     changed = clean_text != adversarial_text
                     ocr_rows.append({"clean": clean_text, "adversarial": adversarial_text, "changed": changed})
