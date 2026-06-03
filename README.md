@@ -1,6 +1,6 @@
-<img align="left" width="120" src="assets/scarecrow.png" alt="scarecrow">
-
 # scarecrow
+
+<img src="assets/scarecrow.png" width="160" alt="">
 
 Adversarial frame pattern optimization for evading ALPR (automated license plate recognition). Given a photo of your plate, scarecrow generates a printable grayscale pattern that suppresses detection while keeping the plate readable to humans. [Keeps the flock away.](https://www.eff.org/deeplinks/2025/12/effs-investigations-expose-flock-safetys-surveillance-abuses-2025-review)
 
