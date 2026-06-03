@@ -161,11 +161,11 @@ class TestOptimizeReproducibility:
         weights = str(repo / "license-plate-finetune-v1n.pt2")
         image = str(repo / "test_plate.jpg")
 
-        base = Config(steps=3, eot_samples=2, batch_size=1, seed=42)
+        base = Config(steps=3, eot_samples=2, seed=42)
         first = optimize(image, weights, base)
         second = optimize(image, weights, base)
         assert torch.equal(first, second)
 
-        alt = Config(steps=3, eot_samples=2, batch_size=1, seed=99)
+        alt = Config(steps=3, eot_samples=2, seed=99)
         third = optimize(image, weights, alt)
         assert not torch.equal(first, third)

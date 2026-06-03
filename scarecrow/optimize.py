@@ -11,6 +11,7 @@ from scarecrow.frame import frame_mask
 
 PATTERN_H, PATTERN_W = 32, 128
 MIN_PLATE_WIDTH = 30
+TAU = 3.0  # LSE temperature over EoT samples (>= 10 is unstable)
 
 
 @dataclass
@@ -24,7 +25,6 @@ class Config:
     steps: int = 1000
     lr: float = 0.01
     eot_samples: int = 4
-    batch_size: int = 2
     imgsz: int = 640
     seed: int | None = None
 
@@ -171,19 +171,15 @@ def optimize(
     if config.seed is not None:
         rng.manual_seed(config.seed)
 
-    tau = 3.0
     for step in range(config.steps):
-        idx = torch.randperm(len(dataset), device=device, generator=rng)[:config.batch_size]
-        batch_items = [dataset[i] for i in idx.tolist()]
-
-        composited = _composite_letterbox(pattern, batch_items, config.imgsz)
+        composited = _composite_letterbox(pattern, dataset, config.imgsz)
         det_losses = []
         for _ in range(config.eot_samples):
             augmented = eot_transform(composited, rng)
             _, scores = yolo.detect(det_model, augmented)
             det_losses.append(scores.max(dim=-1).values.mean())
 
-        det_agg = torch.logsumexp(tau * torch.stack(det_losses), dim=0).div(tau)
+        det_agg = torch.logsumexp(TAU * torch.stack(det_losses), dim=0).div(TAU)
         (grad_det,) = torch.autograd.grad(det_agg, pattern)
         pattern.grad = grad_det
 
