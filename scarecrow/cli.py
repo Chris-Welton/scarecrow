@@ -65,7 +65,7 @@ def _cmd_eval(args) -> int:
             print("rapidocr-onnxruntime required for --ocr. Install: uv sync --extra ocr", file=sys.stderr)
             return 1
 
-    total, evaded, tiny_skipped = 0, 0, 0
+    total, evaded = 0, 0
     conf_clean_sum, conf_adv_sum = 0.0, 0.0
     ocr_total, ocr_changed = 0, 0
     rows = []
@@ -75,22 +75,21 @@ def _cmd_eval(args) -> int:
         bboxes, clean_conf = yolo.predict(yolo_model, img)
         n_before = len(bboxes)
         bboxes = [b for b in bboxes if b[2] >= MIN_PLATE_WIDTH]
-        skipped_tiny = n_before - len(bboxes)
-        tiny_skipped += skipped_tiny
         if not bboxes:
-            row = {
-                "path": str(p),
-                "clean_boxes": 0,
-                "attacked_boxes": 0,
-                "clean_conf": clean_conf,
-                "attacked_conf": 0.0,
-                "evaded": False,
-                "skipped_tiny": skipped_tiny,
-                "ocr": [],
-            }
-            rows.append(row)
+            rows.append(
+                {
+                    "path": str(p),
+                    "clean_boxes": 0,
+                    "attacked_boxes": 0,
+                    "clean_conf": clean_conf,
+                    "attacked_conf": 0.0,
+                    "evaded": False,
+                    "ocr": [],
+                }
+            )
             if not args.json:
-                print(f"{p.name}  [no detection on clean]")
+                reason = f"plate too small (<{MIN_PLATE_WIDTH}px)" if n_before else "no plate detected"
+                print(f"{p.name}  [skipped: {reason}]")
             continue
 
         total += 1
@@ -127,7 +126,6 @@ def _cmd_eval(args) -> int:
                 "clean_conf": clean_conf,
                 "attacked_conf": adv_conf,
                 "evaded": was_evaded,
-                "skipped_tiny": skipped_tiny,
                 "ocr": ocr_rows,
             }
         )
@@ -149,7 +147,6 @@ def _cmd_eval(args) -> int:
             "evaded": evaded,
             "mean_clean_conf": conf_clean_sum / total if total else 0.0,
             "mean_attacked_conf": conf_adv_sum / total if total else 0.0,
-            "tiny_skipped": tiny_skipped,
             "ocr_total": ocr_total,
             "ocr_changed": ocr_changed,
         }
@@ -176,8 +173,6 @@ def _cmd_eval(args) -> int:
         )
     if ocr_reader is not None and ocr_total > 0:
         print(f"OCR changed: {ocr_changed}/{ocr_total} ({100 * ocr_changed / ocr_total:.0f}%)")
-    if tiny_skipped:
-        print(f"(skipped {tiny_skipped} detections < {MIN_PLATE_WIDTH}px)")
     return 0
 
 
