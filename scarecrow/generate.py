@@ -152,13 +152,13 @@ def _load_plates(
     return plates, skipped
 
 
-def optimize(
+def generate(
     image_path: str | Path,
     weights: str,
     config: Config | None = None,
     on_step: Callable | None = None,
 ) -> torch.Tensor:
-    """Optimize a grayscale frame pattern to suppress plate detection.
+    """Generate a grayscale frame pattern to suppress plate detection.
 
     Returns pattern values in [0, 1] of shape (PATTERN_H, PATTERN_W).
     """

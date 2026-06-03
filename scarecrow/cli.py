@@ -6,9 +6,9 @@ from pathlib import Path
 
 from scarecrow import frame, ocr
 from scarecrow import model as yolo
+from scarecrow.generate import MIN_PLATE_WIDTH, Config, generate
 from scarecrow.io import image_paths, load, load_pattern, save, save_pattern
 from scarecrow.model import BUNDLED_WEIGHTS_FILENAME
-from scarecrow.optimize import MIN_PLATE_WIDTH, Config, optimize
 
 
 def _cmd_generate(args) -> int:
@@ -18,7 +18,7 @@ def _cmd_generate(args) -> int:
         if step % 25 == 0 or step == config.steps - 1:
             print(f"step {step:4d}  loss={loss:.4f}")
 
-    pattern = optimize(args.input, args.weights, config, on_step=on_step)
+    pattern = generate(args.input, args.weights, config, on_step=on_step)
     pattern = pattern.cpu().numpy()
     out = args.output or str(Path(args.input).with_name(f"{Path(args.input).stem}_pattern.png"))
     save_pattern(pattern, out)

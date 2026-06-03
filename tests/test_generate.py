@@ -3,17 +3,17 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from scarecrow.io import load_pattern, save_pattern
-from scarecrow.model import _nms, letterbox
-from scarecrow.optimize import (
+from scarecrow.generate import (
     PATTERN_H,
     PATTERN_W,
     Config,
     PlateData,
     _composite_letterbox,
     eot_transform,
-    optimize,
+    generate,
 )
+from scarecrow.io import load_pattern, save_pattern
+from scarecrow.model import _nms, letterbox
 
 
 class TestCompositeLetterbox:
@@ -149,7 +149,7 @@ class TestPatternRoundTrip:
         np.testing.assert_allclose(loaded, pattern, atol=1 / 255 + 1e-6)
 
 
-class TestOptimizeReproducibility:
+class TestGenerateReproducibility:
     def test_seed_determinism(self, monkeypatch):
         """Same seed yields identical patterns; different seeds diverge."""
         # Force CPU so grid_sample/interpolate backward stay deterministic.
@@ -160,10 +160,10 @@ class TestOptimizeReproducibility:
         image = str(repo / "test_plate.jpg")
 
         base = Config(steps=3, eot_samples=2, seed=42)
-        first = optimize(image, weights, base)
-        second = optimize(image, weights, base)
+        first = generate(image, weights, base)
+        second = generate(image, weights, base)
         assert torch.equal(first, second)
 
         alt = Config(steps=3, eot_samples=2, seed=99)
-        third = optimize(image, weights, alt)
+        third = generate(image, weights, alt)
         assert not torch.equal(first, third)
