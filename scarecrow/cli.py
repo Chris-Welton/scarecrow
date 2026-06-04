@@ -6,6 +6,7 @@ from pathlib import Path
 
 from scarecrow import frame, ocr
 from scarecrow import model as yolo
+from scarecrow.export import export_svg
 from scarecrow.generate import MIN_PLATE_WIDTH, Config, generate
 from scarecrow.io import image_paths, load, load_pattern, save, save_pattern
 from scarecrow.model import BUNDLED_WEIGHTS_FILENAME
@@ -40,6 +41,33 @@ def _cmd_apply(args) -> int:
     out = args.output or str(Path(args.input).with_stem(Path(args.input).stem + "_framed"))
     save(img, out)
     print(f"Saved to {out}")
+    return 0
+
+
+def _cmd_export(args) -> int:
+    img = load(args.input)
+    pattern = load_pattern(args.pattern)
+
+    model = yolo.load(args.weights)
+    bboxes, _ = yolo.predict(model, img)
+    bboxes = [b for b in bboxes if b[2] >= MIN_PLATE_WIDTH]
+    if not bboxes:
+        print(f"No usable plate detected in {args.input}", file=sys.stderr)
+        return 1
+    if len(bboxes) > 1:
+        print(
+            f"Multiple usable plates detected in {args.input}. Crop the reference image to one plate before exporting",
+            file=sys.stderr,
+        )
+        return 1
+
+    out = args.output or str(Path(args.input).with_name(f"{Path(args.input).stem}_frame.svg"))
+    try:
+        result = export_svg(pattern, img.shape[:2], bboxes[0], out)
+    except ValueError as e:
+        print(e, file=sys.stderr)
+        return 1
+    print(f"Saved frame template to {out} ({result.width_in:.2f} x {result.height_in:.2f} in)")
     return 0
 
 
@@ -179,6 +207,12 @@ def main() -> int:
     ap.add_argument("--weights", metavar="MODEL.pt2", default=BUNDLED_WEIGHTS_FILENAME, help="Detector .pt2 file")
     ap.add_argument("-o", "--output", metavar="OUT", help="Output image path")
 
+    ex = sub.add_parser("export", help="Export SVG frame template")
+    ex.add_argument("input", metavar="IMAGE", help="Reference image")
+    ex.add_argument("--pattern", metavar="PATTERN.png", required=True, help="Generated frame pattern PNG")
+    ex.add_argument("--weights", metavar="MODEL.pt2", default=BUNDLED_WEIGHTS_FILENAME, help="Detector .pt2 file")
+    ex.add_argument("-o", "--output", metavar="FRAME.svg", help="Output SVG path")
+
     ev = sub.add_parser("eval", help="Evaluate pattern effectiveness")
     ev.add_argument("input", metavar="INPUT", help="Image file or directory")
     ev.add_argument("--pattern", metavar="PATTERN.png", required=True, help="Generated frame pattern PNG")
@@ -187,7 +221,7 @@ def main() -> int:
     ev.add_argument("--ocr", action="store_true", help="Also run RapidOCR on clean/adversarial plate crops")
 
     args = p.parse_args()
-    cmd = {"generate": _cmd_generate, "apply": _cmd_apply, "eval": _cmd_eval}
+    cmd = {"generate": _cmd_generate, "apply": _cmd_apply, "export": _cmd_export, "eval": _cmd_eval}
     return cmd[args.command](args)
 
 

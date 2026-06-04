@@ -5,7 +5,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](pyproject.toml)
 [![GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
-Adversarial frame pattern optimization for evading ALPR (automated license plate recognition). Given a photo of your plate, scarecrow generates a printable grayscale pattern that suppresses detection while keeping the plate readable to humans. [Keeps the flock away.](https://www.eff.org/deeplinks/2025/12/effs-investigations-expose-flock-safetys-surveillance-abuses-2025-review)
+Adversarial frame pattern optimization for evading ALPR (automated license plate recognition). Given a photo of your plate, scarecrow generates an optimized grayscale frame pattern and can export an SVG frame template for that pattern, aiming to suppress detection while keeping the plate readable to humans. [Keeps the flock away.](https://www.eff.org/deeplinks/2025/12/effs-investigations-expose-flock-safetys-surveillance-abuses-2025-review)
 
 > [!WARNING]
 > This project is a research tool for personal privacy against warrantless mass surveillance. It is not intended for evading law enforcement in the commission of a crime. Frame patterns do not obstruct or alter plate text, but laws around devices placed near the plate vary by jurisdiction and are evolving. Please check your local laws before use.
@@ -55,7 +55,7 @@ Install dependencies:
 uv sync
 ```
 
-Take a photo of your plate from the front, straight on, with even lighting and minimal angle. This is the reference image the optimization works from. See `test_plate.jpg` for an example.
+Take a photo of your plate from the front, straight on, with even lighting and minimal angle. Leave some room around the plate because `export` uses that area for the frame. See `test_plate.jpg` for an example.
 
 ```bash
 # Generate a frame pattern for your plate (takes a few minutes on GPU)
@@ -63,6 +63,9 @@ scarecrow generate plate.jpg
 
 # Reproducible generation with a fixed seed
 scarecrow generate plate.jpg --seed 42
+
+# Export an SVG frame template for printing
+scarecrow export plate.jpg --pattern plate_pattern.png
 
 # Preview the result
 scarecrow apply plate.jpg --pattern plate_pattern.png
@@ -76,6 +79,8 @@ scarecrow eval plate.jpg --pattern plate_pattern.png --ocr
 # Emit structured eval results
 scarecrow eval plate.jpg --pattern plate_pattern.png --json
 ```
+
+`generate` writes the reusable optimized pattern PNG. `export` combines that pattern with the original reference image geometry and writes an SVG frame template sized for printing at 100%.
 
 ## Using your own detection model
 
