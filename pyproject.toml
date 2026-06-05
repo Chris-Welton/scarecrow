@@ -1,6 +1,6 @@
 [project]
 name = "scarecrow-alpr"
-version = "0.2.0"
+version = "0.2.1"
 description = "An adversarial frame pattern optimizer for evading automated license plate recognition, personalized to your plate."
 readme = "README.md"
 requires-python = ">=3.11"
