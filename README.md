@@ -72,7 +72,7 @@ uv tool install "scarecrow-alpr[ocr]" --torch-backend cpu
 
 ## Usage
 
-Take a photo of your plate from the front, straight on, with even lighting and some room around the plate. `export` uses the surrounding area to size the frame. See `test_plate.jpg` for an example.
+Take a photo of your plate from the front, straight on, in even lighting. See `test_plate.jpg` for an example.
 
 Generate the reusable pattern, then export the printable SVG frame:
 
@@ -81,7 +81,7 @@ scarecrow generate plate.jpg
 scarecrow export plate.jpg --pattern plate_pattern.png
 ```
 
-By default, these write `plate_pattern.png` and `plate_frame.svg`.
+By default, these commands create `plate_pattern.png` and `plate_frame.svg`, respectively.
 
 Preview the pattern on your reference photo, or check detection results:
 
@@ -95,6 +95,9 @@ Other useful options:
 ```bash
 # Reproducible generation with a fixed seed
 scarecrow generate plate.jpg --seed 42
+
+# Choose the SVG output path
+scarecrow export plate.jpg --pattern plate_pattern.png -o my_frame.svg
 
 # Evaluate RapidOCR reads (requires the ocr extra)
 scarecrow eval plate.jpg --pattern plate_pattern.png --ocr
