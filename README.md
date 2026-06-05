@@ -2,6 +2,7 @@
 
 <img src="https://raw.githubusercontent.com/Meltedd/scarecrow/master/assets/scarecrow.png" width="160" alt="">
 
+[![PyPI](https://img.shields.io/pypi/v/scarecrow-alpr.svg)](https://pypi.org/project/scarecrow-alpr/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](pyproject.toml)
 [![GPL-3.0 + AGPL-3.0](https://img.shields.io/badge/license-GPL--3.0%20%2B%20AGPL--3.0-blue)](#license)
 
@@ -47,13 +48,23 @@ The included detection model is a [YOLO11n](https://huggingface.co/morsetechlab/
 
 ## Usage
 
-Scarecrow requires Python 3.11+. The PyPI package `scarecrow-alpr` installs the `scarecrow` command and includes the bundled detector model:
+Scarecrow requires Python 3.11+. The PyPI package `scarecrow-alpr` installs the `scarecrow` command and includes the bundled detector model.
+
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) first if you do not already have it.
+
+For the simpler (but slower) CPU install:
 
 ```bash
 uv tool install scarecrow-alpr --torch-backend cpu
 ```
 
-The CPU backend is the recommended default, while GPU users can choose a uv PyTorch backend such as `auto` or a CUDA backend instead of `cpu`. For RapidOCR support, include the `ocr` extra:
+If you want GPU acceleration:
+
+```bash
+uv tool install scarecrow-alpr --torch-backend auto
+```
+
+For RapidOCR support, add the `ocr` extra to either command:
 
 ```bash
 uv tool install "scarecrow-alpr[ocr]" --torch-backend cpu
