@@ -4,7 +4,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/scarecrow-alpr.svg)](https://pypi.org/project/scarecrow-alpr/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](pyproject.toml)
-[![GPL-3.0 + AGPL-3.0](https://img.shields.io/badge/license-GPL--3.0%20%2B%20AGPL--3.0-blue)](#license)
+[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue)](#license)
 
 Adversarial frame pattern optimization for evading ALPR (automated license plate recognition). Given a photo of your plate, scarecrow generates an optimized grayscale frame pattern and can export an SVG frame template for that pattern, aiming to suppress detection while keeping the plate readable to humans. [Keeps the flock away.](https://www.eff.org/deeplinks/2025/12/effs-investigations-expose-flock-safetys-surveillance-abuses-2025-review)
 
@@ -154,4 +154,4 @@ Then pass `--weights your-model.pt2` to any scarecrow command.
 
 ## License
 
-Project code is GPL-3.0-only, and the bundled detector model is AGPL-3.0-only. See [THIRD_PARTY_NOTICES.md](https://github.com/Meltedd/scarecrow/blob/master/THIRD_PARTY_NOTICES.md) for model provenance.
+Scarecrow's code is licensed under [GPL-3.0](https://github.com/Meltedd/scarecrow/blob/master/LICENSE). The bundled detector model is licensed under [AGPL-3.0](https://github.com/Meltedd/scarecrow/blob/master/LICENSES/AGPL-3.0-only.txt). See [THIRD_PARTY_NOTICES.md](https://github.com/Meltedd/scarecrow/blob/master/THIRD_PARTY_NOTICES.md) for the model source.
