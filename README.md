@@ -154,4 +154,4 @@ Then pass `--weights your-model.pt2` to any scarecrow command.
 
 ## License
 
-Scarecrow's code is licensed under [GPL-3.0](https://github.com/Meltedd/scarecrow/blob/master/LICENSE). The bundled detector model is licensed under [AGPL-3.0](https://github.com/Meltedd/scarecrow/blob/master/LICENSES/AGPL-3.0-only.txt). See [THIRD_PARTY_NOTICES.md](https://github.com/Meltedd/scarecrow/blob/master/THIRD_PARTY_NOTICES.md) for the model source.
+Scarecrow's code is licensed under [GPL-3.0](https://github.com/Meltedd/scarecrow/blob/master/LICENSE), while the bundled detector model is licensed under [AGPL-3.0](https://github.com/Meltedd/scarecrow/blob/master/LICENSES/AGPL-3.0-only.txt). See [THIRD_PARTY_NOTICES.md](https://github.com/Meltedd/scarecrow/blob/master/THIRD_PARTY_NOTICES.md) for the model source.
