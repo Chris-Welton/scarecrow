@@ -8,6 +8,7 @@ import torch.nn.functional as F
 
 from scarecrow import model as yolo
 from scarecrow.frame import frame_mask
+from scarecrow.io import image_paths
 
 PATTERN_H, PATTERN_W = 32, 128
 MIN_PLATE_WIDTH = 30
@@ -132,22 +133,26 @@ def eot_transform(images: torch.Tensor, rng: torch.Generator) -> torch.Tensor:
 def _load_plates(
     path: Path, model: torch.nn.Module, device: torch.device | str
 ) -> tuple[list[PlateData], int]:
-    """Detect plates in an image and return PlateData at original resolution."""
-    bgr = cv2.imread(str(path))
-    if bgr is None:
-        raise ValueError(f"Failed to read image: {path}")
-    rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
-    img_t = torch.from_numpy(rgb).permute(2, 0, 1).float().div(255.0).to(device)
-
-    bboxes, _ = yolo.predict(model, rgb)
+    """Detect plates across one image or a directory of images and return PlateData
+    at original resolution. Multiple references optimize a single pattern jointly,
+    which improves transfer across scale, lighting, and viewing angle.
+    """
     plates: list[PlateData] = []
     skipped = 0
-    for bbox in bboxes:
-        if bbox[2] < MIN_PLATE_WIDTH:
-            skipped += 1
-            continue
-        mask_t = torch.from_numpy(frame_mask(rgb.shape[:2], bbox)).float().unsqueeze(0).to(device)
-        plates.append(PlateData(img_t, mask_t))
+    for p in image_paths(path):
+        bgr = cv2.imread(str(p))
+        if bgr is None:
+            raise ValueError(f"Failed to read image: {p}")
+        rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+        img_t = torch.from_numpy(rgb).permute(2, 0, 1).float().div(255.0).to(device)
+
+        bboxes, _ = yolo.predict(model, rgb)
+        for bbox in bboxes:
+            if bbox[2] < MIN_PLATE_WIDTH:
+                skipped += 1
+                continue
+            mask_t = torch.from_numpy(frame_mask(rgb.shape[:2], bbox)).float().unsqueeze(0).to(device)
+            plates.append(PlateData(img_t, mask_t))
 
     return plates, skipped
 

@@ -198,7 +198,7 @@ def main() -> int:
     sub = p.add_subparsers(dest="command", required=True)
 
     gen = sub.add_parser("generate", help="Generate adversarial frame pattern")
-    gen.add_argument("input", metavar="IMAGE", help="Plate image file")
+    gen.add_argument("input", metavar="IMAGE", help="Plate image file or directory of reference images")
     gen.add_argument("--weights", metavar="MODEL.pt2", default=None, help="Detector .pt2 file (default: bundled)")
     gen.add_argument("--steps", metavar="N", type=int, default=1000, help="Optimization steps")
     gen.add_argument("--seed", metavar="N", type=int, default=None, help="Reproducible optimization seed")
